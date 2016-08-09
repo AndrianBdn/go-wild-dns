@@ -1,1 +1,1 @@
-# Wild-Go-DNS
+# Go-Wild-DNS
