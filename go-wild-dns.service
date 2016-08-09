@@ -1,0 +1,10 @@
+[Unit]
+Description=Go Wild DNS
+
+[Service]
+ExecStart=/root/go/bin/go-wild-dns
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+
