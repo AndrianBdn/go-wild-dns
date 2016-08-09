@@ -15,10 +15,13 @@ It's like your own [xip.io](http://xip.io)
 ## Setup 
 
 Create NS record for magic-domain: 
+```
 ip.mydomain.io 	NS 	ns1.ip.mydomain.io
+```
 and A record too: 
-ns1.ip.mydomain.io  1.2.3.4
-
+```
+ns1.ip.mydomain.io  A 1.2.3.4
+```
 
 Now go to the 1.2.3.4 server: 
 
