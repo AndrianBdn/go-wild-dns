@@ -1,8 +1,10 @@
 [Unit]
 Description=Go Wild DNS
 
+
 [Service]
-Environment=DOMAIN_SUFFIX=ip.suf.io
+; note, that DOMAIN_SUFFIX value *must* end with "."
+Environment=DOMAIN_SUFFIX=ip.suf.io.
 ExecStart=/root/go/bin/go-wild-dns
 Restart=on-abort
 
