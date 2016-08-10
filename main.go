@@ -60,7 +60,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 					Name:   q.Name,
 					Rrtype: dns.TypeA,
 					Class:  dns.ClassINET,
-					Ttl:    3600 * 4,
+					Ttl:    86400,
 				},
 				A: net.ParseIP(ip).To4(),
 			}
