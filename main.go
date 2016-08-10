@@ -26,7 +26,6 @@ func getMyIP() string {
 	if resp.StatusCode == 200 {
 		defer resp.Body.Close()
 		respBody, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("response Body : ", string(respBody))
 		ip := strings.TrimSpace(string(respBody))
 		if net.ParseIP(ip) == nil {
 			log.Fatalf("fail, %s returned bad IP\n")
@@ -75,7 +74,7 @@ func main() {
 	if domainSuffix == "" {
 		log.Fatal("Error: DOMAIN_SUFFIX environment is not set")
 	}
-
+	log.Printf("Will serve zone %s\n", domainSuffix);
 	log.Println("Discoverying our IP...")
 	defaultIP = getMyIP()
 	log.Println(defaultIP)
