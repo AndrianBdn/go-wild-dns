@@ -37,8 +37,6 @@ func getMyIP() string {
 }
 
 func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
-	log.Printf("handle")
-
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Compress = false
