@@ -13,10 +13,36 @@ import (
 
 const ipDiscoveryURL string = "http://whatismyip.akamai.com/"
 
-var defaultIP string
+var defaultIP net.IP
 var domainSuffix string
 
-func getMyIP() string {
+
+func ipFromHost(host string, def net.IP) net.IP {
+	var sip string
+
+	r, _ := regexp.Compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)\\.")
+	submatch := r.FindStringSubmatch(host)
+	if len(submatch) > 1 {
+		sip = submatch[1]
+	} else {
+
+		r, _ = regexp.Compile("(\\d+\\-\\d+\\-\\d+\\-\\d+)\\.")
+		submatch = r.FindStringSubmatch(host)
+		if len(submatch) > 1 {
+			daship := submatch[1]
+			sip = strings.Replace(daship, "-", ".", 4)
+		}
+	}
+
+	ip := net.ParseIP(sip)
+	if ip == nil {
+		return def
+	}
+
+	return ip.To4()
+}
+
+func getMyIP() net.IP {
 	resp, err := http.Get(ipDiscoveryURL)
 	if err != nil {
 		log.Fatalf("HTTP GET error %s", err)
@@ -25,15 +51,16 @@ func getMyIP() string {
 	if resp.StatusCode == 200 {
 		defer resp.Body.Close()
 		respBody, _ := ioutil.ReadAll(resp.Body)
-		ip := strings.TrimSpace(string(respBody))
-		if net.ParseIP(ip) == nil {
+		sip := strings.TrimSpace(string(respBody))
+		ip := net.ParseIP(sip)
+		if  ip == nil {
 			log.Fatalf("fail, %s returned bad IP\n")
 		}
-		return ip
+		return ip.To4()
 	}
 
 	log.Fatalf("bad response: %s", resp.Status)
-	return ""
+	return nil
 }
 
 func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
@@ -43,12 +70,10 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 	if r.Opcode == dns.OpcodeQuery {
 		for _, q := range m.Question {
-			r, _ := regexp.Compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)\\.")
-			submatch := r.FindStringSubmatch(q.Name)
 
-			ip := defaultIP
-			if len(submatch) > 1 && strings.HasSuffix(q.Name, domainSuffix) {
-				ip = submatch[1]
+			ip := ipFromHost(q.Name, defaultIP)
+			if !strings.HasSuffix(q.Name, domainSuffix) {
+				ip = defaultIP
 			}
 
 			aRec := &dns.A{
@@ -58,7 +83,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 					Class:  dns.ClassINET,
 					Ttl:    86400,
 				},
-				A: net.ParseIP(ip).To4(),
+				A: ip,
 			}
 			m.Answer = append(m.Answer, aRec)
 		}
