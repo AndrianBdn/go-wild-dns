@@ -11,6 +11,17 @@ foo.bar.10.0.0.1.ip.mydomain.io  resolves to   10.0.0.1
 
 It's like your own [xip.io](http://xip.io)
 
+## TLS Mode
+
+Optionally **go-wild-dns** supports *TLS Mode* for wildcard certificates (which can only wildcard up to first dot): 
+ 
+```
+        10-0-0-1.ip.mydomain.io  resolves to   10.0.0.1
+    www-10-0-0-1.ip.mydomain.io  resolves to   10.0.0.1
+ mysite-10-0-0-1.ip.mydomain.io  resolves to   10.0.0.1
+foo-bar-10-0-0-1.ip.mydomain.io  resolves to   10.0.0.1
+```
+
 
 ## Setup 
 
@@ -31,11 +42,11 @@ Now go to the 1.2.3.4 server:
 3. systemctl daemon-reload && systemctl enable go-wild-dns && systemctl start go-wild-dns 
 
 
-Now repeat everything for secondary server. 
+Now repeat everything for secondary server (optional)
 
 
 ## Notes 
 
-- It seems to be not so much DNS-compliant (no NS or SOA records) for now 
-- No tests (just works on the resolvers I've tested)
-- Most certanly not production grade, runs as root 
+- It seems to be not quite DNS-compliant (no NS or SOA records) 
+- No DNS-based tests, just works for me 
+- In any strange situation, NS server just returns its IP 
