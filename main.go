@@ -9,9 +9,12 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
-const ipDiscoveryURL string = "http://whatismyip.akamai.com/"
+const ipDiscoveryURL1 string = "http://whatismyip.akamai.com/"
+const ipDiscoveryURL2 string = "https://api.ipify.org/"
+const ipDiscoveryURL3 string = "https://ifconfig.co/ip"
 
 var defaultIP net.IP
 var domainSuffix string
@@ -42,10 +45,11 @@ func ipFromHost(host string, def net.IP) net.IP {
 	return ip.To4()
 }
 
-func getMyIP() net.IP {
-	resp, err := http.Get(ipDiscoveryURL)
+func getMyIPWithService(serviceURL string) net.IP {
+	resp, err := http.Get(serviceURL)
 	if err != nil {
-		log.Fatalf("HTTP GET error %s", err)
+		log.Printf("HTTP GET error %s", err)
+		return nil
 	}
 
 	if resp.StatusCode == 200 {
@@ -54,13 +58,31 @@ func getMyIP() net.IP {
 		sip := strings.TrimSpace(string(respBody))
 		ip := net.ParseIP(sip)
 		if  ip == nil {
-			log.Fatalf("fail, %s returned bad IP\n")
+			log.Printf("fail, %s returned bad IP\n")
+			return nil
 		}
 		return ip.To4()
 	}
 
 	log.Fatalf("bad response: %s", resp.Status)
 	return nil
+}
+
+
+func getMyIP() net.IP {
+	ip := getMyIPWithService(ipDiscoveryURL1)
+	if ip != nil {
+		return  ip
+	}
+
+	ip = getMyIPWithService(ipDiscoveryURL2)
+	if ip != nil {
+		return  ip
+	}
+
+	ip = getMyIPWithService(ipDiscoveryURL3)
+
+	return ip
 }
 
 func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
@@ -72,7 +94,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 		for _, q := range m.Question {
 
 			ip := ipFromHost(q.Name, defaultIP)
-			if !strings.HasSuffix(q.Name, domainSuffix) {
+			if !strings.HasSuffix(strings.ToLower(q.Name), domainSuffix) {
 				ip = defaultIP
 			}
 
@@ -86,20 +108,52 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 				A: ip,
 			}
 			m.Answer = append(m.Answer, aRec)
+			log.Printf("resolving %v to %v", q.Name, ip)
 		}
 	}
 	w.WriteMsg(m)
+
 }
 
-func main() {
+
+func discoverIPWithRetries() {
+
+	for t := 0; t <= 5; t++ {
+		log.Println("Discoverying our IP...")
+		defaultIP = getMyIP()
+
+		if defaultIP != nil {
+			break
+		} else {
+			time.Sleep(time.Second * 5)
+		}
+	}
+
+	if defaultIP == nil {
+		log.Fatalf("Was unable to discover our IP")
+	}
+
+	log.Println(defaultIP)
+}
+
+func discoverDomainSuffix() {
 	domainSuffix = os.Getenv("DOMAIN_SUFFIX")
 	if domainSuffix == "" {
 		log.Fatal("Error: DOMAIN_SUFFIX environment is not set")
 	}
+
+
+	if !strings.HasSuffix(domainSuffix, ".") {
+		domainSuffix = domainSuffix + "."
+	}
+	domainSuffix = strings.ToLower(domainSuffix)
+}
+
+
+func main() {
+	discoverDomainSuffix()
 	log.Printf("Will serve zone %s\n", domainSuffix);
-	log.Println("Discoverying our IP...")
-	defaultIP = getMyIP()
-	log.Println(defaultIP)
+	discoverIPWithRetries()
 
 	log.Printf("Starting DNS server on port 53...\n")
 	dns.HandleFunc(".", handleDnsRequest)

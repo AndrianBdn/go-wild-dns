@@ -37,7 +37,7 @@ ns1.ip.mydomain.io  A 1.2.3.4
 Now go to the 1.2.3.4 server: 
 
 0. Setup go compiler, build go-wild-dns binary, allow firewall access to port 53
-1. Edit go-wild-dns.service and put ```ip.mydomain.io.``` (note dot at the end) to DOMAIN_SUFFIX environment variable. Edit path to binary if necessary. 
+1. Edit go-wild-dns.service and put ```ip.mydomain.io.``` to DOMAIN_SUFFIX environment variable. Edit path to binary if necessary.
 2. Copy go-wild-dns.service to /etc/systemd/system/
 3. systemctl daemon-reload && systemctl enable go-wild-dns && systemctl start go-wild-dns 
 
