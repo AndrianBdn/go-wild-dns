@@ -3,10 +3,17 @@ Description=Go Wild DNS
 
 
 [Service]
-; note, that DOMAIN_SUFFIX value *must* end with "."
-Environment=DOMAIN_SUFFIX=ip.suf.io.
+; DOMAIN_SUFFIX is a DNS SUFFIX
+;    example: test.1.2.3.4.ip.suf.fix, DOMAIN_SUFFIX=ip.suf.fix
+; NS2 (NS1, NS3, NS4)
+;    NS2 env variable contains IP of OTHER ns server - ns2.ip.rdl.as
+;    we support NS1, NS2, NS3, NS4
+;    the server know its own IP, no need to specify it - only specify other ones
+;    the other server (NS2) has a record for NS1
+Environment=DOMAIN_SUFFIX=ip.suf.fix.  NS2=5.4.2.1
 ExecStart=/root/go/bin/go-wild-dns
-Restart=on-abort
+Restart=always
+
 
 [Install]
 WantedBy=multi-user.target
