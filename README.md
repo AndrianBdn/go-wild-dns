@@ -37,16 +37,15 @@ ns1.ip.mydomain.io  A 1.2.3.4
 Now go to the 1.2.3.4 server: 
 
 0. Setup go compiler, build go-wild-dns binary (just run `go build`)
-1. Edit go-wild-dns.service and put ```ip.mydomain.io.``` to DOMAIN_SUFFIX environment variable. Specify IP of other NS servers if you are using them. Edit path to binary if necessary.
+1. Edit go-wild-dns.service: specify your DOMAIN_SUFFIX environment variable. Specify IP of other NS servers if you are using > 1. Edit path to binary if necessary.
 2. Copy go-wild-dns.service to /etc/systemd/system/
 3. systemctl daemon-reload && systemctl enable go-wild-dns && systemctl start go-wild-dns 
-4. allow firewall access to port 53
+4. Allow firewall access to port 53 (UDP)
 
 Now repeat everything for secondary server (optional)
 
 
-## Notes 
+## DNS Pecularities 
 
-- It seems to be not quite DNS-compliant (no NS or SOA records) 
-- No DNS-based tests, just works for me 
-- In any strange situation, NS server just returns its IP 
+- No NS / SOA records implemented
+- Returns its own IP as a fallback 
