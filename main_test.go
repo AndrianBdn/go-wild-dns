@@ -1,8 +1,8 @@
 package main
 
 import (
-	"testing"
 	"net"
+	"testing"
 )
 
 func TestBasic(t *testing.T) {

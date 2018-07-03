@@ -3,6 +3,8 @@ Description=Go Wild DNS
 
 
 [Service]
+User=nobody
+Group=nogroup
 ; DOMAIN_SUFFIX is a DNS SUFFIX
 ;    example: test.1.2.3.4.ip.suf.fix, DOMAIN_SUFFIX=ip.suf.fix
 ; NS2 (NS1, NS3, NS4)
@@ -11,8 +13,9 @@ Description=Go Wild DNS
 ;    the server know its own IP, no need to specify it - only specify other ones
 ;    the other server (NS2) has a record for NS1
 Environment=DOMAIN_SUFFIX=ip.suf.fix.  NS2=5.4.2.1
-ExecStart=/root/go/bin/go-wild-dns
+ExecStart=/opt/bin/go-wild-dns
 Restart=always
+AmbientCapabilities=CAP_NET_BIND_SERVICE
 
 
 [Install]

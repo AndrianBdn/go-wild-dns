@@ -8,20 +8,18 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 )
 
 const ipDiscoveryURL1 string = "http://whatismyip.akamai.com/"
 const ipDiscoveryURL2 string = "https://api.ipify.org/"
 const ipDiscoveryURL3 string = "https://ifconfig.co/ip"
 
-
 var staticA map[string]net.IP
 var defaultIP net.IP
 var domainSuffix string
-
 
 func ipFromHost(host string, def net.IP) net.IP {
 	var sip string
@@ -60,7 +58,7 @@ func getMyIPWithService(serviceURL string) net.IP {
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		sip := strings.TrimSpace(string(respBody))
 		ip := net.ParseIP(sip)
-		if  ip == nil {
+		if ip == nil {
 			log.Printf("fail, %s returned bad IP\n")
 			return nil
 		}
@@ -71,16 +69,15 @@ func getMyIPWithService(serviceURL string) net.IP {
 	return nil
 }
 
-
 func getMyIP() net.IP {
 	ip := getMyIPWithService(ipDiscoveryURL1)
 	if ip != nil {
-		return  ip
+		return ip
 	}
 
 	ip = getMyIPWithService(ipDiscoveryURL2)
 	if ip != nil {
-		return  ip
+		return ip
 	}
 
 	ip = getMyIPWithService(ipDiscoveryURL3)
@@ -99,7 +96,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 			var ip net.IP
 
 			if val, set := staticA[qNameLower]; set {
-				ip = val;
+				ip = val
 			} else {
 				ip = ipFromHost(q.Name, defaultIP)
 				if !strings.HasSuffix(qNameLower, domainSuffix) {
@@ -123,7 +120,6 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 	w.WriteMsg(m)
 
 }
-
 
 func discoverIPWithRetries() {
 
@@ -151,7 +147,6 @@ func discoverDomainSuffix() {
 		log.Fatal("Error: DOMAIN_SUFFIX environment is not set")
 	}
 
-
 	if !strings.HasSuffix(domainSuffix, ".") {
 		domainSuffix = domainSuffix + "."
 	}
@@ -167,7 +162,7 @@ func discoverOtherNS() {
 	staticA = make(map[string]net.IP)
 
 	for i := 1; i <= 4; i++ {
-		key := "NS"+strconv.Itoa(i)
+		key := "NS" + strconv.Itoa(i)
 		nsval := os.Getenv(key)
 
 		if nsval != "" {
@@ -176,7 +171,7 @@ func discoverOtherNS() {
 				continue
 			}
 
-			staticA[strings.ToLower(key) + "." + domainSuffix] = ip.To4()
+			staticA[strings.ToLower(key)+"."+domainSuffix] = ip.To4()
 		}
 	}
 }
@@ -184,7 +179,7 @@ func discoverOtherNS() {
 func main() {
 	discoverDomainSuffix()
 	discoverOtherNS()
-	log.Printf("Will serve zone %s\n", domainSuffix);
+	log.Printf("Will serve zone %s\n", domainSuffix)
 	discoverIPWithRetries()
 
 	log.Printf("Starting DNS server on port 53...\n")
