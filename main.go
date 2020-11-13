@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -89,6 +90,17 @@ func getMyIP() net.IP {
 	return ip
 }
 
+func isNil(i interface{}) bool {
+	if i == nil {
+		return true
+	}
+	switch reflect.TypeOf(i).Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+		return reflect.ValueOf(i).IsNil()
+	}
+	return false
+}
+
 func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
@@ -103,7 +115,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 				// default - will reply with A request
 				r = handleARequest(q)
 			}
-			if r == nil {
+			if isNil(r) {
 				return
 			}
 
