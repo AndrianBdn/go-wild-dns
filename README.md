@@ -22,6 +22,9 @@ Optionally **go-wild-dns** supports *TLS Mode* for wildcard certificates (which 
 foo-bar-10-0-0-1.ip.mydomain.io  resolves to   10.0.0.1
 ```
 
+## TXT records supports (for letencrypt)
+
+See information about TXT_RECORDS_PATH in go-wild-dns.service 
 
 ## Setup 
 

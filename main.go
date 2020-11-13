@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ func ipFromHost(host string, def net.IP) net.IP {
 		sip = submatch[1]
 	} else {
 
-		r, _ = regexp.Compile("(\\d+\\-\\d+\\-\\d+\\-\\d+)\\.")
+		r, _ = regexp.Compile("(\\d+-\\d+-\\d+-\\d+)\\.")
 		submatch = r.FindStringSubmatch(host)
 		if len(submatch) > 1 {
 			daship := submatch[1]
@@ -53,13 +54,16 @@ func getMyIPWithService(serviceURL string) net.IP {
 		return nil
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.Body != nil {
 		defer resp.Body.Close()
+	}
+
+	if resp.StatusCode == 200 {
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		sip := strings.TrimSpace(string(respBody))
 		ip := net.ParseIP(sip)
 		if ip == nil {
-			log.Printf("fail, %s returned bad IP\n")
+			log.Printf("fail, %s returned bad IP\n", sip)
 			return nil
 		}
 		return ip.To4()
@@ -92,39 +96,88 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 	if r.Opcode == dns.OpcodeQuery {
 		for _, q := range m.Question {
-			qNameLower := strings.ToLower(q.Name)
-			var ip net.IP
-
-			if val, set := staticA[qNameLower]; set {
-				ip = val
+			var r dns.RR
+			if q.Qtype == dns.TypeTXT {
+				r = handleTxtRequest(q)
 			} else {
-				ip = ipFromHost(q.Name, defaultIP)
-				if !strings.HasSuffix(qNameLower, domainSuffix) {
-					ip = defaultIP
-				}
+				// default - will reply with A request
+				r = handleARequest(q)
 			}
-
-			aRec := &dns.A{
-				Hdr: dns.RR_Header{
-					Name:   q.Name,
-					Rrtype: dns.TypeA,
-					Class:  dns.ClassINET,
-					Ttl:    86400,
-				},
-				A: ip,
+			if r != nil {
+				m.Answer = append(m.Answer, r)
 			}
-			m.Answer = append(m.Answer, aRec)
-			log.Printf("resolving %v to %v", q.Name, ip)
 		}
 	}
-	w.WriteMsg(m)
+	_ = w.WriteMsg(m)
+}
+func handleARequest(q dns.Question) *dns.A {
+	qNameLower := strings.ToLower(q.Name)
+	var ip net.IP
 
+	if val, set := staticA[qNameLower]; set {
+		ip = val
+	} else {
+		ip = ipFromHost(q.Name, defaultIP)
+		if !strings.HasSuffix(qNameLower, domainSuffix) {
+			ip = defaultIP
+		}
+	}
+
+	aRec := dns.A{
+		Hdr: dns.RR_Header{
+			Name:   q.Name,
+			Rrtype: dns.TypeA,
+			Class:  dns.ClassINET,
+			Ttl:    86400,
+		},
+		A: ip,
+	}
+	log.Printf("resolving %v to %v", q.Name, ip)
+	return &aRec
+}
+
+func handleTxtRequest(q dns.Question) *dns.TXT {
+	qNameLower := strings.ToLower(q.Name)
+
+	txtPath := os.Getenv("TXT_RECORDS_PATH")
+	if txtPath == "" {
+		return nil
+	}
+
+	if strings.ContainsAny(qNameLower, "/\\") {
+		return nil
+	}
+
+	if !strings.HasSuffix(qNameLower, domainSuffix) {
+		return nil
+	}
+
+	recordPath := filepath.Join(txtPath, qNameLower)
+
+	value, err := ioutil.ReadFile(recordPath)
+	if err != nil {
+		log.Printf("resolving %v: 404", q.Name)
+		return nil
+	}
+	strValue := string(value)
+	strValue = strings.TrimSpace(strValue)
+	if len(strValue) > 255 {
+		log.Printf("ERROR: resolving %v to (value too big, not sending): %v ", q.Name, strValue)
+		return nil
+	}
+
+	log.Printf("resolving %v to %v", q.Name, strValue)
+
+	return &dns.TXT{
+		Hdr: dns.RR_Header{Name: q.Name, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: 0},
+		Txt: []string{strValue},
+	}
 }
 
 func discoverIPWithRetries() {
 
 	for t := 0; t <= 5; t++ {
-		log.Println("Discoverying our IP...")
+		log.Println("Discovering our IP...")
 		defaultIP = getMyIP()
 
 		if defaultIP != nil {

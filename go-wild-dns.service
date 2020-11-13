@@ -5,14 +5,20 @@ Description=Go Wild DNS
 [Service]
 User=nobody
 Group=nogroup
+;
 ; DOMAIN_SUFFIX is a DNS SUFFIX
 ;    example: test.1.2.3.4.ip.suf.fix, DOMAIN_SUFFIX=ip.suf.fix
+;
 ; NS2 (NS1, NS3, NS4)
 ;    NS2 env variable contains IP of OTHER ns server - ns2.ip.rdl.as
 ;    we support NS1, NS2, NS3, NS4
 ;    the server know its own IP, no need to specify it - only specify other ones
 ;    the other server (NS2) has a record for NS1
-Environment=DOMAIN_SUFFIX=ip.suf.fix.  NS2=5.4.2.1
+;
+; TXT_RECORDS_PATH
+;    filesystem path (like /opt/var/go-wild-dns) that will contain values for TXT records
+;
+Environment=DOMAIN_SUFFIX=ip.suf.fix. TXT_RECORDS_PATH=/opt/var/go-wild-dns  NS2=5.4.2.1
 ExecStart=/opt/bin/go-wild-dns
 Restart=always
 AmbientCapabilities=CAP_NET_BIND_SERVICE
