@@ -103,15 +103,15 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 				// default - will reply with A request
 				r = handleARequest(q)
 			}
-			if r != nil {
-				m.Answer = append(m.Answer, r)
+			if r == nil {
+				return
 			}
+
+			m.Answer = append(m.Answer, r)
 		}
 	}
 
-	if m.Answer != nil {
-		_ = w.WriteMsg(m)
-	}
+	_ = w.WriteMsg(m)
 }
 func handleARequest(q dns.Question) *dns.A {
 	qNameLower := strings.ToLower(q.Name)
