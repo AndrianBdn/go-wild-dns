@@ -113,7 +113,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 				r = handleTxtRequest(q)
 			} else {
 				// default - will reply with A request
-				r = handleARequest(q)
+				r = handleARequest(q, w.RemoteAddr())
 			}
 			if isNil(r) {
 				return
@@ -125,7 +125,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 	_ = w.WriteMsg(m)
 }
-func handleARequest(q dns.Question) *dns.A {
+func handleARequest(q dns.Question, addr net.Addr) *dns.A {
 	qNameLower := strings.ToLower(q.Name)
 	var ip net.IP
 
@@ -136,6 +136,7 @@ func handleARequest(q dns.Question) *dns.A {
 		if strings.HasSuffix(qNameLower, domainSuffix) {
 			ip = defaultIP
 		} else {
+			log.Printf("requested %s from %v\n", qNameLower, addr.String())
 			return nil 
 		}
 	}
