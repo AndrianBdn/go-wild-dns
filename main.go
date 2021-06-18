@@ -133,8 +133,10 @@ func handleARequest(q dns.Question) *dns.A {
 		ip = val
 	} else {
 		ip = ipFromHost(q.Name, defaultIP)
-		if !strings.HasSuffix(qNameLower, domainSuffix) {
+		if strings.HasSuffix(qNameLower, domainSuffix) {
 			ip = defaultIP
+		} else {
+			return nil 
 		}
 	}
 

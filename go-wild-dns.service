@@ -16,7 +16,9 @@ Group=nogroup
 ;    the other server (NS2) has a record for NS1
 ;
 ; TXT_RECORDS_PATH
-;    filesystem path (like /opt/var/go-wild-dns) that will contain values for TXT records
+;   filesystem path (like /opt/var/go-wild-dns) that will contain values for TXT records
+;   - values are always in lowercase
+;   - values always end with dot: files are named like "my-txt-record.ip.suf.fix."
 ;
 Environment=DOMAIN_SUFFIX=ip.suf.fix. TXT_RECORDS_PATH=/opt/var/go-wild-dns  NS2=5.4.2.1
 ExecStart=/opt/bin/go-wild-dns
