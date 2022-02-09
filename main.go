@@ -133,12 +133,12 @@ func handleARequest(q dns.Question, addr net.Addr) *dns.A {
 		ip = val
 	} else {
 		ip = ipFromHost(q.Name, defaultIP)
-		if strings.HasSuffix(qNameLower, domainSuffix) {
-			ip = defaultIP
-		} else {
-			log.Printf("requested %s from %v\n", qNameLower, addr.String())
-			return nil 
+		if !strings.HasSuffix(qNameLower, domainSuffix) {
+			log.Printf("requested %s from %v (bad suffix!)\n", qNameLower, addr.String())
+			return nil
 		}
+
+		log.Printf("requested %s from %v\n", qNameLower, addr.String())
 	}
 
 	aRec := dns.A{
