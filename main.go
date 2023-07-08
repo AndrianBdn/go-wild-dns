@@ -26,13 +26,13 @@ var domainSuffix string
 func ipFromHost(host string, def net.IP) net.IP {
 	var sip string
 
-	r, _ := regexp.Compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)\\.")
+	r := regexp.MustCompile(`(\d+\.\d+\.\d+\.\d+)\.`)
 	submatch := r.FindStringSubmatch(host)
 	if len(submatch) > 1 {
 		sip = submatch[1]
 	} else {
 
-		r, _ = regexp.Compile("(\\d+-\\d+-\\d+-\\d+)\\.")
+		r = regexp.MustCompile(`(\d+-\d+-\d+-\d+)\.`)
 		submatch = r.FindStringSubmatch(host)
 		if len(submatch) > 1 {
 			daship := submatch[1]
